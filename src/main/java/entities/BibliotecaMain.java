@@ -18,29 +18,43 @@ public class BibliotecaMain {
 
         while (running) {
             System.out.println("\n-- Menu Biblioteca --");
-            System.out.println("1. Aggiungi Libro");
-            System.out.println("2. Aggiungi Rivista");
-            System.out.println("3. Rimuovi elemento per ISBN");
-            System.out.println("4. Ricerca per ISBN");
-            System.out.println("5. Ricerca per anno pubblicazione");
-            System.out.println("6. Ricerca per autore (solo libri)");
-            System.out.println("7. Ricerca per titolo o parte di esso");
-            System.out.println("8. Ricerca prestiti per numero tessera");
-            System.out.println("9. Prestiti scaduti non restituiti");
+            System.out.println("1. Aggiungi elemento");
+            System.out.println("2. Rimuovi elemento per ISBN");
+            System.out.println("3. Ricerca per ISBN");
+            System.out.println("4. Ricerca per anno pubblicazione");
+            System.out.println("5. Ricerca per autore (solo libri)");
+            System.out.println("6. Ricerca per titolo o parte di esso");
+            System.out.println("7. Ricerca prestiti per numero tessera");
+            System.out.println("8. Prestiti scaduti non restituiti");
             System.out.println("0. Esci");
 
             int scelta = Integer.parseInt(scanner.nextLine());
 
             switch (scelta) {
-                case 1 -> aggiungiLibro(scanner);
-                case 2 -> aggiungiRivista(scanner);
-                case 3 -> rimuoviElemento(scanner);
-                case 4 -> ricercaPerISBN(scanner);
-                case 5 -> ricercaPerAnno(scanner);
-                case 6 -> ricercaPerAutore(scanner);
-                case 7 -> ricercaPerTitolo(scanner);
-                case 8 -> ricercaPrestitiPerTessera(scanner);
-                case 9 -> ricercaPrestitiScaduti();
+                case 1 -> {
+                    boolean aggiungiRunning = true;
+                    while (aggiungiRunning) {
+                        System.out.println("\n-- Sotto-menu Aggiungi elemento --");
+                        System.out.println("1. Aggiungi Libro");
+                        System.out.println("2. Aggiungi Rivista");
+                        System.out.println("0. Torna al menu principale");
+
+                        int sottoScelta = Integer.parseInt(scanner.nextLine());
+                        switch (sottoScelta) {
+                            case 1 -> aggiungiLibro(scanner);
+                            case 2 -> aggiungiRivista(scanner);
+                            case 0 -> aggiungiRunning = false;
+                            default -> System.out.println("Scelta non valida");
+                        }
+                    }
+                }
+                case 2 -> rimuoviElemento(scanner);
+                case 3 -> ricercaPerISBN(scanner);
+                case 4 -> ricercaPerAnno(scanner);
+                case 5 -> ricercaPerAutore(scanner);
+                case 6 -> ricercaPerTitolo(scanner);
+                case 7 -> ricercaPrestitiPerTessera(scanner);
+                case 8 -> ricercaPrestitiScaduti();
                 case 0 -> running = false;
                 default -> System.out.println("Scelta non valida");
             }
@@ -82,8 +96,38 @@ public class BibliotecaMain {
             int anno = Integer.parseInt(scanner.nextLine());
             System.out.println("Numero pagine:");
             int pagine = Integer.parseInt(scanner.nextLine());
-            System.out.println("Periodicita (SETTIMANALE, MENSILE, SEMESTRALE):");
-            Periodicita periodicita = Periodicita.valueOf(scanner.nextLine().toUpperCase());
+
+            Periodicita periodicita = null;
+            boolean valid = false;
+            while (!valid) {
+                System.out.println("Scegli la periodicità:");
+                System.out.println("1. SETTIMANALE");
+                System.out.println("2. MENSILE");
+                System.out.println("3. SEMESTRALE");
+                System.out.println("0. Annulla");
+
+                int scelta = Integer.parseInt(scanner.nextLine());
+                switch (scelta) {
+                    case 1 -> {
+                        periodicita = Periodicita.SETTIMANALE;
+                        valid = true;
+                    }
+                    case 2 -> {
+                        periodicita = Periodicita.MENSILE;
+                        valid = true;
+                    }
+                    case 3 -> {
+                        periodicita = Periodicita.SEMESTRALE;
+                        valid = true;
+                    }
+                    case 0 -> {
+                        System.out.println("Inserimento rivista annullato.");
+                        em.close();
+                        return;
+                    }
+                    default -> System.out.println("Scelta non valida, riprova.");
+                }
+            }
 
             Rivista rivista = new Rivista(titolo, anno, pagine, periodicita);
 
@@ -92,10 +136,10 @@ public class BibliotecaMain {
             em.getTransaction().commit();
             System.out.println("Rivista aggiunta con successo!");
         } finally {
-            em.close();
+            if (em.isOpen()) em.close();
         }
     }
-
+    
     private static void rimuoviElemento(Scanner scanner) {
         EntityManager em = emf.createEntityManager();
         try {
