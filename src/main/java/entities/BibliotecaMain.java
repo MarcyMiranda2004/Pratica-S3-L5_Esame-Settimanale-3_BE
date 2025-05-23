@@ -78,7 +78,7 @@ public class BibliotecaMain {
             Prestito prestitoAperto = TestData.creaPrestitoAperto(utente1, libro1);
             em.persist(prestitoAperto);
 
-            // Prestito con già restituito
+            // Prestito già restituito
             Prestito prestitoConRestituzione = TestData.creaPrestitoConRestituzione(utente2, rivista1);
             em.persist(prestitoConRestituzione);
 
