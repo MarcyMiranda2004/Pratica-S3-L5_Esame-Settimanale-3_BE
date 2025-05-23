@@ -11,12 +11,12 @@ public class Prestito {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "utente_numero_tessera", nullable = false)
     private Utente utente;
 
-    @ManyToOne
-    @JoinColumn(name = "isbn_elemento", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "isbn_elemento_prestato", nullable = false)
     private ElementoCatalogo elementoPrestato;
 
     @Column(name = "data_inizio_prestito", nullable = false)
@@ -35,6 +35,11 @@ public class Prestito {
         this.elementoPrestato = elementoPrestato;
         this.dataInizioPrestito = dataInizioPrestito;
         this.dataRestituzionePrevista = dataInizioPrestito.plusDays(30);
+    }
+
+    public Prestito(Utente utente, ElementoCatalogo elementoPrestato, LocalDate dataInizioPrestito, LocalDate dataRestituzioneEffettiva) {
+        this(utente, elementoPrestato, dataInizioPrestito);
+        this.dataRestituzioneEffettiva = dataRestituzioneEffettiva;
     }
 
     public Long getId() { return id; }
@@ -66,8 +71,8 @@ public class Prestito {
     public String toString() {
         return "Prestito{" +
                 "id=" + id +
-                ", utente=" + utente +
-                ", elementoPrestato=" + elementoPrestato +
+                ", utente=" + (utente != null ? utente.getNumeroTessera() : "null") +
+                ", elementoPrestato=" + (elementoPrestato != null ? elementoPrestato.getIsbn() : "null") +
                 ", dataInizioPrestito=" + dataInizioPrestito +
                 ", dataRestituzionePrevista=" + dataRestituzionePrevista +
                 ", dataRestituzioneEffettiva=" + dataRestituzioneEffettiva +

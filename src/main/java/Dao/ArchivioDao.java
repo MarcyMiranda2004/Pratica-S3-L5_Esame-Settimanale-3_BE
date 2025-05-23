@@ -120,10 +120,10 @@ public class ArchivioDao {
         }
     }
 
-    public List<Prestito> ricercaPrestitiPerTessera(int numeroTessera) {
+    public List<Prestito> ricercaPrestitiPerTessera(String numeroTessera) {
         EntityManager em = emf.createEntityManager();
         try {
-            TypedQuery<Prestito> query = em.createQuery("SELECT p FROM Prestito p WHERE p.numeroTessera = :numTessera", Prestito.class);
+            TypedQuery<Prestito> query = em.createQuery("SELECT p FROM Prestito p WHERE p.utente.numeroTessera = :numTessera", Prestito.class);
             query.setParameter("numTessera", numeroTessera);
             return query.getResultList();
         } finally {
@@ -135,7 +135,7 @@ public class ArchivioDao {
         EntityManager em = emf.createEntityManager();
         try {
             LocalDate oggi = LocalDate.now();
-            TypedQuery<Prestito> query = em.createQuery("SELECT p FROM Prestito p WHERE p.dataRestituzione IS NULL AND p.dataScadenza < :oggi", Prestito.class);
+            TypedQuery<Prestito> query = em.createQuery("SELECT p FROM Prestito p WHERE p.dataRestituzioneEffettiva IS NULL AND p.dataRestituzionePrevista < :oggi\n", Prestito.class);
             query.setParameter("oggi", oggi);
             return query.getResultList();
         } finally {

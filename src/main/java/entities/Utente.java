@@ -8,6 +8,11 @@ import java.util.List;
 @Table(name = "utenti")
 public class Utente {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Fa generare al DB
+    @Column(name = "numero_tessera")
+    private Long numeroTessera;
+
     @Column(length = 50, nullable = false)
     private String nome;
 
@@ -17,20 +22,15 @@ public class Utente {
     @Column(name = "data_di_nascita", nullable = false)
     private LocalDate dataDiNascita;
 
-    @Id
-    @Column(name = "numero_tessera", nullable = false, unique = true)
-    private String numeroTessera;
-
     @OneToMany(mappedBy = "utente", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Prestito> prestiti;
 
     protected Utente() {}
 
-    public Utente(String nome, String cognome, LocalDate dataDiNascita, String numeroTessera) {
+    public Utente(String nome, String cognome, LocalDate dataDiNascita) {
         this.nome = nome;
         this.cognome = cognome;
         this.dataDiNascita = dataDiNascita;
-        this.numeroTessera = numeroTessera;
     }
 
     public String getNome() { return nome; }
@@ -42,8 +42,8 @@ public class Utente {
     public LocalDate getDataDiNascita() { return dataDiNascita; }
     public void setDataDiNascita(LocalDate dataDiNascita) { this.dataDiNascita = dataDiNascita; }
 
-    public String getNumeroTessera() { return numeroTessera; }
-    public void setNumeroTessera(String numeroTessera) { this.numeroTessera = numeroTessera; }
+    public Long getNumeroTessera() { return numeroTessera; }
+    public void setNumeroTessera(Long numeroTessera) { this.numeroTessera = numeroTessera; }
 
     public List<Prestito> getPrestiti() { return prestiti; }
     public void setPrestiti(List<Prestito> prestiti) { this.prestiti = prestiti; }

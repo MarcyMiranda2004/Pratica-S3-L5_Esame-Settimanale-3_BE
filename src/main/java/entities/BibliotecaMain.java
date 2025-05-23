@@ -1,7 +1,11 @@
 package entities;
 
-import enums.Periodicita;
 import Dao.ArchivioDao;
+import enums.Periodicita;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
+
 import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
@@ -12,6 +16,7 @@ public class BibliotecaMain {
     private static final ArchivioDao archivioDao = new ArchivioDao();
 
     public static void main(String[] args) {
+        inserisciDatiTest();
 
         boolean running = true;
 
@@ -45,6 +50,48 @@ public class BibliotecaMain {
         System.out.println("Chiusura programma. Arrivederci!");
         scanner.close();
         archivioDao.close();
+    }
+
+    //dati test
+    private static void inserisciDatiTest() {
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("Name_Pratica_S3_L5_Esame_Settimanale_3");
+        EntityManager em = emf.createEntityManager();
+
+        try {
+            em.getTransaction().begin();
+
+            Utente utente1 = TestData.creaUtente1();
+            Utente utente2 = TestData.creaUtente2();
+            em.persist(utente1);
+            em.persist(utente2);
+
+            em.flush();
+
+            Libro libro1 = TestData.creaLibro1();
+            Libro libro2 = TestData.creaLibro2();
+            Rivista rivista1 = TestData.creaRivista1();
+            em.persist(libro1);
+            em.persist(libro2);
+            em.persist(rivista1);
+
+            // Prestito non restituito, eventualmente scaduto
+            Prestito prestitoAperto = TestData.creaPrestitoAperto(utente1, libro1);
+            em.persist(prestitoAperto);
+
+            // Prestito con già restituito
+            Prestito prestitoConRestituzione = TestData.creaPrestitoConRestituzione(utente2, rivista1);
+            em.persist(prestitoConRestituzione);
+
+            em.getTransaction().commit();
+            System.out.println("Dati di test inseriti con successo.");
+        } catch (Exception e) {
+            em.getTransaction().rollback();
+            System.out.println("Errore durante l'inserimento dei dati di test.");
+            e.printStackTrace();
+        } finally {
+            em.close();
+            emf.close();
+        }
     }
 
     private static int leggiIntero(int min, int max) {
@@ -96,140 +143,110 @@ public class BibliotecaMain {
     }
 
     private static Libro creaLibroDaInput() {
-        try {
-            System.out.println("Titolo:");
-            String titolo = scanner.nextLine();
+        System.out.println("Inserisci titolo:");
+        String titolo = scanner.nextLine();
 
-            System.out.println("Anno pubblicazione:");
-            int anno = leggiIntero(0, 3000);
+        System.out.println("Inserisci anno pubblicazione:");
+        int anno = leggiIntero(1000, 2100);
 
-            System.out.println("Numero pagine:");
-            int pagine = leggiIntero(1, Integer.MAX_VALUE);
+        System.out.println("Inserisci numero pagine:");
+        int pagine = leggiIntero(1, 10000);
 
-            System.out.println("Autore:");
-            String autore = scanner.nextLine();
+        System.out.println("Inserisci autore:");
+        String autore = scanner.nextLine();
 
-            System.out.println("Genere:");
-            String genere = scanner.nextLine();
+        System.out.println("Inserisci genere:");
+        String genere = scanner.nextLine();
 
-            return new Libro(titolo, anno, pagine, autore, genere);
-
-        } catch (Exception e) {
-            System.out.println("Errore durante la creazione del libro: " + e.getMessage());
-            return null;
-        }
+        return new Libro(titolo, anno, pagine, autore, genere);
     }
 
     private static Rivista creaRivistaDaInput() {
+        System.out.println("Inserisci titolo:");
+        String titolo = scanner.nextLine();
+
+        System.out.println("Inserisci anno pubblicazione:");
+        int anno = leggiIntero(1000, 2100);
+
+        System.out.println("Inserisci numero pagine:");
+        int pagine = leggiIntero(1, 10000);
+
+        System.out.println("Inserisci periodicità (SETTIMANALE, MENSILE, SEMESTRALE):");
+        String periodicitaInput = scanner.nextLine().toUpperCase();
+
+        Periodicita periodicita;
+
         try {
-            System.out.println("Titolo:");
-            String titolo = scanner.nextLine();
-
-            System.out.println("Anno pubblicazione:");
-            int anno = leggiIntero(0, 3000);
-
-            System.out.println("Numero pagine:");
-            int pagine = leggiIntero(1, Integer.MAX_VALUE);
-
-            Periodicita periodicita = null;
-            boolean valid = false;
-            while (!valid) {
-                System.out.println("Scegli la periodicità:");
-                System.out.println("1. SETTIMANALE");
-                System.out.println("2. MENSILE");
-                System.out.println("3. SEMESTRALE");
-                System.out.println("0. Annulla");
-
-                int scelta = leggiIntero(0, 3);
-                switch (scelta) {
-                    case 1 -> {
-                        periodicita = Periodicita.SETTIMANALE;
-                        valid = true;
-                    }
-                    case 2 -> {
-                        periodicita = Periodicita.MENSILE;
-                        valid = true;
-                    }
-                    case 3 -> {
-                        periodicita = Periodicita.SEMESTRALE;
-                        valid = true;
-                    }
-                    case 0 -> {
-                        System.out.println("Inserimento rivista annullato.");
-                        return null;
-                    }
-                }
-            }
-
-            return new Rivista(titolo, anno, pagine, periodicita);
-
-        } catch (Exception e) {
-            System.out.println("Errore durante la creazione della rivista: " + e.getMessage());
+            periodicita = Periodicita.valueOf(periodicitaInput);
+        } catch (IllegalArgumentException e) {
+            System.out.println("Periodicità non valida.");
             return null;
         }
+
+        return new Rivista(titolo, anno, pagine, periodicita);
     }
 
     private static void rimuoviElemento() {
-        System.out.println("Inserisci ISBN:");
-        String inputIsbn = scanner.nextLine();
-        UUID isbn;
+        System.out.println("Inserisci ISBN dell'elemento da rimuovere:");
+        String isbnStr = scanner.nextLine();
+
         try {
-            isbn = UUID.fromString(inputIsbn);
+            UUID isbn = UUID.fromString(isbnStr);
+            boolean ok = archivioDao.rimuoviElemento(isbn);
+            System.out.println(ok ? "Elemento rimosso con successo." : "Elemento non trovato.");
         } catch (IllegalArgumentException e) {
             System.out.println("ISBN non valido.");
-            return;
         }
-
-        boolean ok = archivioDao.rimuoviElemento(isbn);
-        System.out.println(ok ? "Elemento rimosso." : "Elemento non trovato o errore nella rimozione.");
     }
 
     private static void ricercaPerISBN() {
-        System.out.println("Inserisci ISBN:");
-        String inputIsbn = scanner.nextLine();
-        UUID isbn;
+        System.out.println("Inserisci ISBN da cercare:");
+        String isbnStr = scanner.nextLine();
+
         try {
-            isbn = UUID.fromString(inputIsbn);
+            UUID isbn = UUID.fromString(isbnStr);
+            ElementoCatalogo elemento = archivioDao.ricercaPerISBN(isbn);
+            if (elemento != null) {
+                System.out.println(elemento);
+            } else {
+                System.out.println("Elemento non trovato.");
+            }
         } catch (IllegalArgumentException e) {
             System.out.println("ISBN non valido.");
-            return;
         }
-
-        ElementoCatalogo elemento = archivioDao.ricercaPerISBN(isbn);
-        System.out.println(elemento != null ? elemento : "Elemento non trovato.");
     }
 
     private static void ricercaPerAnno() {
-        System.out.println("Inserisci anno:");
-        int anno = leggiIntero(0, 3000);
+        System.out.println("Inserisci anno pubblicazione da cercare:");
+        int anno = leggiIntero(1000, 2100);
 
         List<ElementoCatalogo> risultati = archivioDao.ricercaPerAnno(anno);
         if (risultati.isEmpty()) {
-            System.out.println("Nessun risultato trovato.");
+            System.out.println("Nessun elemento trovato per l'anno indicato.");
         } else {
             risultati.forEach(System.out::println);
         }
     }
 
     private static void ricercaPerAutore() {
-        System.out.println("Inserisci autore:");
+        System.out.println("Inserisci autore da cercare:");
         String autore = scanner.nextLine();
 
-        List<Libro> risultati = archivioDao.ricercaPerAutore(autore);
-        if (risultati.isEmpty()) {
-            System.out.println("Nessun risultato trovato.");
+        List<Libro> libri = archivioDao.ricercaPerAutore(autore);
+        if (libri.isEmpty()) {
+            System.out.println("Nessun libro trovato per l'autore indicato.");
         } else {
-            risultati.forEach(System.out::println);
+            libri.forEach(System.out::println);
         }
     }
 
     private static void ricercaPerTitolo() {
-        System.out.println("Inserisci titolo o parte di esso:");
+        System.out.println("Inserisci titolo o parola chiave da cercare:");
         String titolo = scanner.nextLine();
 
         List<ElementoCatalogo> risultati = archivioDao.ricercaPerTitolo(titolo);
         if (risultati.isEmpty()) {
-            System.out.println("Nessun risultato trovato.");
+            System.out.println("Nessun elemento trovato per il titolo indicato.");
         } else {
             risultati.forEach(System.out::println);
         }
@@ -238,8 +255,9 @@ public class BibliotecaMain {
     private static void ricercaPrestitiPerTessera() {
         System.out.println("Inserisci numero tessera:");
         int numero = leggiIntero(1, Integer.MAX_VALUE);
+        String numeroTessera = String.valueOf(numero);
 
-        List<Prestito> prestiti = archivioDao.ricercaPrestitiPerTessera(numero);
+        List<Prestito> prestiti = archivioDao.ricercaPrestitiPerTessera(numeroTessera);
         if (prestiti.isEmpty()) {
             System.out.println("Nessun prestito trovato per il numero tessera inserito.");
         } else {
@@ -248,11 +266,11 @@ public class BibliotecaMain {
     }
 
     private static void ricercaPrestitiScaduti() {
-        List<Prestito> scaduti = archivioDao.ricercaPrestitiScaduti();
-        if (scaduti.isEmpty()) {
-            System.out.println("Nessun prestito scaduto trovato.");
+        List<Prestito> prestiti = archivioDao.ricercaPrestitiScaduti();
+        if (prestiti.isEmpty()) {
+            System.out.println("Nessun prestito scaduto non restituito.");
         } else {
-            scaduti.forEach(System.out::println);
+            prestiti.forEach(System.out::println);
         }
     }
 }
