@@ -1,3 +1,4 @@
+/*
 /* 1. Visualizza tutti gli elementi del catalogo in modo generico */
 SELECT * FROM elementocatalogo;
 
@@ -30,6 +31,12 @@ SELECT * FROM libro;
 
 
 /* 5. Visualizza tutte le riviste (senza dettagli catalogo) */
-SELECT * FROM rivista;
+SELECT * FROM rivista; */
+
+select *
+from prestiti
+
+
+
 
 
