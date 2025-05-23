@@ -2,54 +2,84 @@ package Dao;
 
 import entities.ElementoCatalogo;
 import entities.Libro;
+import entities.Rivista;
 import entities.Prestito;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
 import jakarta.persistence.TypedQuery;
 
-import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
+import java.time.LocalDate;
 
 public class ArchivioDao {
 
-    private EntityManagerFactory emf;
+    private EntityManagerFactory emf = Persistence.createEntityManagerFactory("Name_Pratica_S3_L5_Esame_Settimanale_3");
 
-    public ArchivioDao(EntityManagerFactory emf) {
-        this.emf = emf;
+    public void close() {
+        if (emf != null && emf.isOpen()) {
+            emf.close();
+        }
     }
 
-    private EntityManager getEntityManager() {
-        return emf.createEntityManager();
-    }
-
-    // Aggiunta elemento
-    public void aggiungiElemento(ElementoCatalogo elemento) {
-        EntityManager em = getEntityManager();
+    public boolean aggiungiLibro(Libro libro) {
+        EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
-            em.persist(elemento);
+            em.persist(libro);
             em.getTransaction().commit();
+            return true;
+        } catch (Exception e) {
+            em.getTransaction().rollback();
+            e.printStackTrace();
+            return false;
         } finally {
             em.close();
         }
     }
 
-    // Rimozione per ISBN
-    public void rimuoviElemento(String isbn) {
-        EntityManager em = getEntityManager();
+    public boolean aggiungiRivista(Rivista rivista) {
+        EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
-            ElementoCatalogo el = em.find(ElementoCatalogo.class, isbn);
-            if (el != null) em.remove(el);
+            em.persist(rivista);
             em.getTransaction().commit();
+            return true;
+        } catch (Exception e) {
+            em.getTransaction().rollback();
+            e.printStackTrace();
+            return false;
         } finally {
             em.close();
         }
     }
 
-    // Ricerca per ISBN
-    public ElementoCatalogo cercaPerIsbn(String isbn) {
-        EntityManager em = getEntityManager();
+    public boolean rimuoviElemento(UUID isbn) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            ElementoCatalogo elemento = em.find(ElementoCatalogo.class, isbn);
+            if (elemento != null) {
+                em.remove(elemento);
+                em.getTransaction().commit();
+                return true;
+            } else {
+                em.getTransaction().rollback();
+                return false;
+            }
+        } catch (Exception e) {
+            em.getTransaction().rollback();
+            e.printStackTrace();
+            return false;
+        } finally {
+            em.close();
+        }
+    }
+
+    public ElementoCatalogo ricercaPerISBN(UUID isbn) {
+        EntityManager em = emf.createEntityManager();
         try {
             return em.find(ElementoCatalogo.class, isbn);
         } finally {
@@ -57,12 +87,10 @@ public class ArchivioDao {
         }
     }
 
-    // Ricerca per anno pubblicazione
-    public List<ElementoCatalogo> cercaPerAnno(int anno) {
-        EntityManager em = getEntityManager();
+    public List<ElementoCatalogo> ricercaPerAnno(int anno) {
+        EntityManager em = emf.createEntityManager();
         try {
-            TypedQuery<ElementoCatalogo> query = em.createQuery(
-                    "SELECT e FROM ElementoCatalogo e WHERE e.annoPubblicazione = :anno", ElementoCatalogo.class);
+            TypedQuery<ElementoCatalogo> query = em.createQuery("SELECT e FROM ElementoCatalogo e WHERE e.annoPubblicazione = :anno", ElementoCatalogo.class);
             query.setParameter("anno", anno);
             return query.getResultList();
         } finally {
@@ -70,12 +98,10 @@ public class ArchivioDao {
         }
     }
 
-    // Ricerca Libro per autore
-    public List<Libro> cercaPerAutore(String autore) {
-        EntityManager em = getEntityManager();
+    public List<Libro> ricercaPerAutore(String autore) {
+        EntityManager em = emf.createEntityManager();
         try {
-            TypedQuery<Libro> query = em.createQuery(
-                    "SELECT l FROM Libro l WHERE l.autore = :autore", Libro.class);
+            TypedQuery<Libro> query = em.createQuery("SELECT l FROM Libro l WHERE LOWER(l.autore) LIKE LOWER(CONCAT('%', :autore, '%'))", Libro.class);
             query.setParameter("autore", autore);
             return query.getResultList();
         } finally {
@@ -83,52 +109,35 @@ public class ArchivioDao {
         }
     }
 
-    // Ricerca per titolo
-    public List<ElementoCatalogo> cercaPerTitolo(String titolo) {
-        EntityManager em = getEntityManager();
+    public List<ElementoCatalogo> ricercaPerTitolo(String titolo) {
+        EntityManager em = emf.createEntityManager();
         try {
-            TypedQuery<ElementoCatalogo> query = em.createQuery(
-                    "SELECT e FROM ElementoCatalogo e WHERE LOWER(e.titolo) LIKE LOWER(:titolo)", ElementoCatalogo.class);
-            query.setParameter("titolo", "%" + titolo + "%");
+            TypedQuery<ElementoCatalogo> query = em.createQuery("SELECT e FROM ElementoCatalogo e WHERE LOWER(e.titolo) LIKE LOWER(CONCAT('%', :titolo, '%'))", ElementoCatalogo.class);
+            query.setParameter("titolo", titolo);
             return query.getResultList();
         } finally {
             em.close();
         }
     }
 
-    // Ricerca elementi in prestito con il numero tessera
-    public List<Prestito> cercaPrestitiPerTessera(int numeroTessera) {
-        EntityManager em = getEntityManager();
+    public List<Prestito> ricercaPrestitiPerTessera(int numeroTessera) {
+        EntityManager em = emf.createEntityManager();
         try {
-            TypedQuery<Prestito> query = em.createQuery(
-                    "SELECT p FROM Prestito p WHERE p.utente.numeroTessera = :tessera AND p.dataRestituzioneEffettiva IS NULL", Prestito.class);
-            query.setParameter("tessera", numeroTessera);
+            TypedQuery<Prestito> query = em.createQuery("SELECT p FROM Prestito p WHERE p.numeroTessera = :numTessera", Prestito.class);
+            query.setParameter("numTessera", numeroTessera);
             return query.getResultList();
         } finally {
             em.close();
         }
     }
 
-    // Ricerca prestiti scaduti e non restituiti
-    public List<Prestito> prestitiScadutiNonRestituiti() {
-        EntityManager em = getEntityManager();
+    public List<Prestito> ricercaPrestitiScaduti() {
+        EntityManager em = emf.createEntityManager();
         try {
-            TypedQuery<Prestito> query = em.createQuery(
-                    "SELECT p FROM Prestito p WHERE p.dataRestituzionePrevista < :oggi AND p.dataRestituzioneEffettiva IS NULL", Prestito.class);
-            query.setParameter("oggi", LocalDate.now());
+            LocalDate oggi = LocalDate.now();
+            TypedQuery<Prestito> query = em.createQuery("SELECT p FROM Prestito p WHERE p.dataRestituzione IS NULL AND p.dataScadenza < :oggi", Prestito.class);
+            query.setParameter("oggi", oggi);
             return query.getResultList();
-        } finally {
-            em.close();
-        }
-    }
-
-    // (Opzionale) Aggiorna un elemento
-    public void aggiornaElemento(ElementoCatalogo elemento) {
-        EntityManager em = getEntityManager();
-        try {
-            em.getTransaction().begin();
-            em.merge(elemento);
-            em.getTransaction().commit();
         } finally {
             em.close();
         }

@@ -20,9 +20,7 @@ public abstract class ElementoCatalogo {
     @Column(name = "numero_pagine", nullable = false)
     private int numeroPagine;
 
-    public ElementoCatalogo() {
-        // Hibernate genera automaticamente l'UUID
-    }
+    public ElementoCatalogo() {}
 
     public ElementoCatalogo(String titolo, int annoPubblicazione, int numeroPagine) {
         this.titolo = titolo;
