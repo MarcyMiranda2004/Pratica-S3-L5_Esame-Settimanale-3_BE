@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.util.UUID;
 
 @Entity
+@Table(name = "elementi_catalogo")
 @Inheritance(strategy = InheritanceType.JOINED)
 public abstract class ElementoCatalogo {
 

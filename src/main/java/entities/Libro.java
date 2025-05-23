@@ -1,8 +1,10 @@
 package entities;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name = "libri")
 public class Libro extends ElementoCatalogo {
     private String autore;
     private String genere;
